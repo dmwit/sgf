@@ -62,7 +62,6 @@ import Data.Word
 import Prelude hiding (round)
 
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 
 -- | A type with no constructors used merely to indicate a lack of data.
 data Void
