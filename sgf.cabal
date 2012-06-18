@@ -28,6 +28,7 @@ library
 
     build-depends:  base >=3 && < 5,
                     containers,
+                    data-default,
                     extensible-exceptions,
                     mtl>=1,
                     time>=1,

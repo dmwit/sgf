@@ -8,7 +8,6 @@ module Data.SGF.Types (
     Game(..), GameTree(..), GameNode(..),
     Move(..), Setup(..),
     Annotation(..), Markup(..), GameInfo(..), GameInfoType(..),
-    emptyGameNode, emptyMove, emptySetup, emptyGameInfo, emptyAnnotation, emptyMarkup,
 
     -- * Game-specific types
     -- ** Go
@@ -52,6 +51,7 @@ module Data.SGF.Types (
     Void
 ) where
 
+import Data.Default
 import Data.List
 import Data.Map hiding (empty, filter, findIndex)
 import Data.Maybe
@@ -399,8 +399,8 @@ data Move move = Move {
     overtimeMovesWhite  :: Maybe Integer
     } deriving (Eq, Ord, Show, Read)
 
-emptyMove :: Move move
-emptyMove = Move Nothing Possibly Nothing Nothing Nothing Nothing Nothing Nothing
+instance Default (Move move) where
+    def = Move def Possibly def def def def def def
 
 -- | See also 'NodeGo' and 'Game'.
 data MoveGo = Pass | Play Point deriving (Eq, Ord, Show, Read)
@@ -431,8 +431,8 @@ data Setup stone = Setup {
     toPlay   :: Maybe Color
     } deriving (Eq, Ord, Show, Read)
 
-emptySetup :: Setup stone
-emptySetup = Setup Set.empty Set.empty Set.empty Nothing
+instance Default (Setup stone) where
+    def = Setup def def def def
 -- }}}
 -- GameInfo {{{
 -- | See also 'GameNode'.  Each individual game may have at most one node with
@@ -468,8 +468,8 @@ data GameInfo ruleSet extra = GameInfo {
     otherGameInfo   :: extra
     } deriving (Eq, Ord, Show, Read)
 
-emptyGameInfo :: GameInfo ruleSet ()
-emptyGameInfo = GameInfo Nothing Nothing Set.empty Nothing Nothing Nothing Nothing Map.empty ()
+instance Default extra => Default (GameInfo ruleSet extra) where
+    def = GameInfo def def def def def def def def def
 
 -- | See also 'NodeGo' and the 'otherGameInfo' field of 'GameInfo'.
 data GameInfoGo = GameInfoGo {
@@ -567,8 +567,8 @@ data Annotation extra = Annotation {
     otherAnnotation :: extra
     } deriving (Eq, Ord, Show, Read)
 
-emptyAnnotation :: Annotation ()
-emptyAnnotation = Annotation Nothing Nothing Nothing Nothing Nothing ()
+instance Default extra => Default (Annotation extra) where
+    def = Annotation def def def def def def
 
 -- | See also 'NodeGo' and the 'otherAnnotation' field of 'Annotation'.  This
 -- specifies which points are considered territory for each player.  See also
@@ -615,8 +615,8 @@ data Markup = Markup {
     figure      :: Maybe Figure
     } deriving (Eq, Ord, Show, Read)
 
-emptyMarkup :: Markup
-emptyMarkup = Markup Map.empty Map.empty Set.empty Set.empty Nothing Nothing Nothing Nothing
+instance Default Markup where
+    def = Markup def def def def def def def def
 -- }}}
 -- Game/GameNode/GameTree {{{
 -- | See also 'Collection'.
@@ -689,8 +689,8 @@ data GameNode move stone ruleSet extraGameInfo extraAnnotation = GameNode {
     unknown     :: Map String [[Word8]]
     } deriving (Eq, Ord, Show, Read)
 
-emptyGameNode :: GameNode move stone ruleSet extraGameInfo ()
-emptyGameNode = GameNode Nothing (Left emptySetup) emptyAnnotation emptyMarkup Map.empty
+instance Default extraAnnotation => Default (GameNode move stone ruleSet extraGameInfo extraAnnotation) where
+    def = GameNode def (Left def) def def def
 
 -- | See also 'TreeGo' and 'Game'.
 type NodeGo            = GameNode MoveGo  Point   RuleSetGo         GameInfoGo              AnnotationGo

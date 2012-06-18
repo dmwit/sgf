@@ -21,6 +21,7 @@ import Control.Monad.State
 import Control.Monad.Writer
 import Data.Bits
 import Data.Char
+import Data.Default
 import Data.Encoding
 import Data.Function
 import Data.List
@@ -153,10 +154,12 @@ freeformGameInfo = [
     ("US", T.User            ),
     ("WT", T.TeamName White  )
     ]
+
+consumeFreeformGameInfo :: Header -> Translator (T.GameInfo ruleSet ())
 consumeFreeformGameInfo header = fmap gameInfo tagValues where
     (tags, types) = unzip freeformGameInfo
     tagValues     = mapM (transMap (simple header)) tags
-    gameInfo vals = (\m -> emptyGameInfo { T.freeform = m })
+    gameInfo vals = (\m -> def { T.freeform = m })
                   . Map.fromList . catMaybes
                   $ zipWith (fmap . (,)) types vals
 
@@ -249,7 +252,7 @@ warnClipDate gameInfo@(T.GameInfo { T.date = d }) = let d' = Set.map clipDate d 
     when (d /= d') (tell [InvalidDatesClipped d])
     return gameInfo { T.date = d' }
 
-dateUpdate g v = g { T.date = maybe Set.empty Set.fromList v }
+dateUpdate g v = g { T.date = maybe def Set.fromList v }
 
 round s = case words s of
     [roundNumber@(_:_)]                | all isDigit roundNumber
@@ -263,7 +266,7 @@ move move = do
     color_                                              <- mapM has ["B", "W"]
     [number_, overtimeMovesBlack_, overtimeMovesWhite_] <- mapM (transMap number) ["MN", "OB", "OW"]
     [timeBlack_, timeWhite_]                            <- mapM (transMap real  ) ["BL", "WL"]
-    let partialMove = emptyMove {
+    let partialMove = def {
             T.number                = number_,
             T.timeBlack             = timeBlack_,
             T.timeWhite             = timeWhite_,
@@ -310,6 +313,7 @@ setupFinish addBlack addWhite remove =
     liftM (T.Setup addBlack addWhite remove) (transMap color "PL")
 -- }}}
 -- none properties {{{
+annotation :: Header -> Translator (Annotation ())
 annotation header = do
     comment     <- transMap (text   header) "C"
     name        <- transMap (simple header) "N"
@@ -318,7 +322,7 @@ annotation header = do
     judgments'  <- mapM (transMap double) ["GW", "GB", "DM", "UC"]
     let judgments = [(j, e) | (j, Just e) <- zip [GoodForWhite ..] judgments']
     tell . map ExtraPositionalJudgmentOmitted . drop 1 $ judgments
-    return emptyAnnotation {
+    return def {
         T.comment   = comment,
         T.name      = name,
         T.hotspot   = hotspot,
@@ -333,7 +337,7 @@ addMarks marks (mark, points) = tell warning >> return result where
 
 markup header point = do
     markedPoints <- mapM (transMapList (listOfPoint point)) ["CR", "MA", "SL", "SQ", "TR"]
-    marks        <- foldM addMarks Map.empty . zip [Circle ..] $ markedPoints
+    marks        <- foldM addMarks def . zip [Circle ..] $ markedPoints
     labels       <- transMapList (listOf (compose point (simple header))) "LB"
     arrows       <- consumePointPairs "AR"
     lines        <- consumePointPairs "LN"
@@ -420,7 +424,7 @@ ruleSetBackgammon = ruleSetLookup [
     ]
 ruleSetOcti s = case break (== ':') s of
     (major, ':':minors) -> liftM  (flip OctiRuleSet (minorVariations minors       )) (majorVariation major        )
-    (majorOrMinors, "") -> liftM  (flip OctiRuleSet (Set.empty                    )) (majorVariation majorOrMinors)
+    (majorOrMinors, "") -> liftM  (flip OctiRuleSet (def                          )) (majorVariation majorOrMinors)
                    `mplus` return (OctiRuleSet Full (minorVariations majorOrMinors))
     where
     majorVariation      = ruleSetLookup [("full", Full), ("fast", Fast), ("kids", Kids)]
@@ -499,5 +503,5 @@ nodeBackgammon    = nodeOther -- TODO
 nodeLinesOfAction = nodeOther -- TODO
 nodeHex           = nodeOther -- TODO
 nodeOcti          = nodeOther -- TODO
-nodeOther header seenGameInfo = return (Node emptyGameNode []) -- TODO
+nodeOther header seenGameInfo = return def -- TODO
 -- }}}
