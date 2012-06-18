@@ -65,7 +65,8 @@ literalTextExcept    ws = fmap concat $ many (escapedChar <|> unescapedExcept ws
 property = liftM3 ((. map enum) . Property)
     (getPosition)
     (many1 (satisfyChar (liftM2 (&&) isUpper (< '\128'))))
-    (sepEndBy1 (exactWord '[' >> literalTextExcept "]" <* exactWord ']') whitespace)
+    (whitespace >> sepEndBy1 bracketedWords whitespace)
+    where bracketedWords = exactWord '[' >> literalTextExcept "]" <* exactWord ']'
 
 node = do
     exactWord ';'
